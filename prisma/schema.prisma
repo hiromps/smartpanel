@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  SUPPORT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  PARTIALLY_COMPLETED
+  COMPLETED
+  CANCELED
+  REFUNDED
+  FAILED
+}
+
+enum DepositStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum TicketStatus {
+  OPEN
+  ANSWERED
+  WAITING_USER
+  CLOSED
+}
+
+model User {
+  id               String              @id @default(cuid())
+  name             String
+  email            String              @unique
+  passwordHash     String?
+  role             Role                @default(CUSTOMER)
+  isSuspended      Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  wallet           Wallet?
+  orders           Order[]
+  depositRequests  DepositRequest[]
+  tickets          Ticket[]
+  apiKeys          ApiKey[]
+  auditLogs        AuditLog[]          @relation("AuditActor")
+}
+
+model Wallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  amount      Int
+  kind        String
+  note        String?
+  createdAt   DateTime @default(now())
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+}
+
+model PaymentMethod {
+  id            String           @id @default(cuid())
+  code          String           @unique
+  name          String
+  isActive      Boolean          @default(true)
+  extraFeeRate  Float            @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deposits      DepositRequest[]
+}
+
+model DepositRequest {
+  id               String         @id @default(cuid())
+  userId           String
+  paymentMethodId  String
+  amount           Int
+  status           DepositStatus  @default(PENDING)
+  reference        String?
+  adminMemo        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id])
+  paymentMethod    PaymentMethod  @relation(fields: [paymentMethodId], references: [id])
+}
+
+model ServiceCategory {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  services    Service[]
+}
+
+model Service {
+  id                String            @id @default(cuid())
+  categoryId        String
+  providerServiceId String?
+  name              String
+  slug              String            @unique
+  description       String?
+  price             Int
+  cost              Int               @default(0)
+  minQuantity       Int
+  maxQuantity       Int
+  unit              String            @default("count")
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  category          ServiceCategory   @relation(fields: [categoryId], references: [id])
+  providerService   ProviderService?  @relation(fields: [providerServiceId], references: [id])
+  orders            Order[]
+}
+
+model Provider {
+  id               String            @id @default(cuid())
+  name             String
+  apiBaseUrl       String
+  apiKeyEncrypted  String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  services         ProviderService[]
+}
+
+model ProviderService {
+  id                String     @id @default(cuid())
+  providerId        String
+  externalServiceId String
+  name              String
+  rate              Int
+  minQuantity       Int
+  maxQuantity       Int
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  provider          Provider   @relation(fields: [providerId], references: [id])
+  mappedServices    Service[]
+
+  @@unique([providerId, externalServiceId])
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  userId            String
+  serviceId         String
+  quantity          Int
+  chargeAmount      Int
+  providerOrderId   String?
+  targetUrl         String
+  status            OrderStatus   @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User          @relation(fields: [userId], references: [id])
+  service           Service       @relation(fields: [serviceId], references: [id])
+  syncLogs          OrderSyncLog[]
+}
+
+model OrderSyncLog {
+  id          String   @id @default(cuid())
+  orderId     String
+  eventType   String
+  payload     String?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id])
+}
+
+model Ticket {
+  id          String          @id @default(cuid())
+  userId      String
+  subject     String
+  status      TicketStatus    @default(OPEN)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id])
+  messages    TicketMessage[]
+}
+
+model TicketMessage {
+  id          String   @id @default(cuid())
+  ticketId    String
+  senderType  String
+  body        String
+  createdAt   DateTime @default(now())
+  ticket      Ticket   @relation(fields: [ticketId], references: [id])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?
+  type        String
+  title       String
+  body        String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String
+  targetId    String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  actor       User     @relation("AuditActor", fields: [actorUserId], references: [id])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
