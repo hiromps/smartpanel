@@ -1,12 +1,32 @@
-export default function SignupPage() {
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AuthForm } from "@/features/auth/auth-form";
+import { EmailVerificationNote } from "@/features/auth/email-verification-note";
+import { GoogleAuthButton } from "@/features/auth/google-auth-button";
+import { getCurrentUser } from "@/lib/auth/session";
+
+export default async function SignupPage() {
+  const user = await getCurrentUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="container" style={{ padding: "64px 0 80px" }}>
-      <div className="card" style={{ maxWidth: 520, margin: "0 auto", padding: 28 }}>
-        <div className="badge">新規登録</div>
-        <h1 style={{ margin: "16px 0 12px" }}>日本向けパネルを始める</h1>
+      <div className="card" style={{ maxWidth: 560, margin: "0 auto", padding: 28 }}>
+        <div className="badge">会員登録</div>
+        <h1 style={{ margin: "16px 0 12px" }}>SmartPanel をはじめる</h1>
         <p style={{ color: "#abc0df", lineHeight: 1.7 }}>
-          MVPではメール認証とロール管理を含む認証基盤を後続で接続します。
-          ここでは導線と画面構成を先に整えています。
+          Google登録またはメールアドレス登録の2種類で会員登録できます。
+        </p>
+        <GoogleAuthButton text="Googleアカウントで会員登録" />
+        <div style={{ margin: "18px 0", textAlign: "center", color: "#8ea0bf" }}>または</div>
+        <AuthForm mode="signup" />
+        <div style={{ marginTop: 16 }}>
+          <EmailVerificationNote />
+        </div>
+        <p style={{ marginTop: 16, color: "#abc0df" }}>
+          すでにアカウントがありますか？ <Link href="/login">ログインへ</Link>
         </p>
       </div>
     </main>

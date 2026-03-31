@@ -4,7 +4,7 @@ SmartPanel | SNS運用・再販管理プラットフォーム
 
 ## Status
 
-Milestone 1〜2 の初期土台を作成済みです。
+認証・会員マイページの初期実装まで完了しています。
 
 ## Documents
 
@@ -39,10 +39,18 @@ cp .env.example .env
 npm install
 npm run prisma:generate
 npm run prisma:push
+npm run prisma:seed
 npm run dev
 ```
 
 ブラウザで `http://localhost:3000` を開いて確認します。
+
+## Demo account
+
+```txt
+demo@smartpanel.jp
+demo1234
+```
 
 ## Available scripts
 
@@ -54,6 +62,7 @@ npm run lint
 npm run typecheck
 npm run prisma:generate
 npm run prisma:push
+npm run prisma:seed
 ```
 
 ## Current implementation
@@ -62,12 +71,19 @@ npm run prisma:push
 - 日本語ベースの公開トップページ
 - `/services`, `/pricing`, `/faq`
 - `/login`, `/signup`
+- Googleログイン / メールログイン
 - `/terms`, `/privacy`, `/legal`
-- 顧客ダッシュボード雛形 `/dashboard`
+- 顧客ダッシュボード `/dashboard`
+- 注文履歴 `/dashboard/orders`
+- 新規注文画面の雛形 `/dashboard/orders/new`
+- 入金履歴 `/dashboard/deposits`
+- サポート一覧 `/dashboard/tickets`
+- APIキー一覧 `/dashboard/api`
 - 管理ダッシュボード雛形 `/admin`
 - feature-first を意識した初期フォルダ構成
 - Prisma 初期スキーマ
-- auth/role のプレースホルダ基盤
+- auth/role の基盤
+- デモデータ seed
 
 ## Branding
 
@@ -78,4 +94,4 @@ npm run prisma:push
 ## Notes
 
 本プロジェクトは競合サービスの機能カテゴリを参考にしつつ、独自のUI/文言/構成で再構築します。
-競合サイトのデザイン・文章の複製は対象外です.
+競合サイトのデザイン・文章の複製は対象外です。

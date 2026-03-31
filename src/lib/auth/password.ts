@@ -1,0 +1,17 @@
+import bcrypt from "bcryptjs";
+
+export async function hashPassword(password: string) {
+  return bcrypt.hash(password, 12);
+}
+
+export async function verifyPassword(password: string, hash: string) {
+  return bcrypt.compare(password, hash);
+}
+
+export function validatePasswordStrength(password: string) {
+  if (password.length < 8) {
+    return "パスワードは8文字以上にしてください。";
+  }
+
+  return null;
+}
